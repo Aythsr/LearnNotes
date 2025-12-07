@@ -1,7 +1,19 @@
 [project]
-name = "learn-github"
+name = "MyTools"
 version = "0.1.0"
-description = "Add your description here"
+description = "bibi"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "openai>=2.15.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/my_tools"]
