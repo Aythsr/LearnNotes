@@ -1,4 +1,4 @@
-name: Python CI (uv)
+name: build whl and publish (uv)
 
 on:
   push:
