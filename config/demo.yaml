@@ -1,0 +1,11 @@
+ai_config:
+  model: gpt-4
+  key: YOUR_API_KEY_HERE
+  temperature: 0.7
+  exten: 
+    - key: val 
+      value: 1500
+      frequency_penalty: 1
+    - key: val2
+      value: 3000
+      frequency_penalty: 0.5
