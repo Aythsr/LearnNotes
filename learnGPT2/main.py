@@ -9,8 +9,8 @@ class GPT2config:
     block_size: int = 256 # 通道数量
     vocab_size: int = 64 # 词表大小
     n_layer: int = 6
-    n_head: int = 6
-    n_emb: int = 786 # 嵌入向量
+    n_head: int = 4
+    n_emb: int = 16 # 嵌入向量
 
 class MLP(nn.Module):
     def __init__(self, config: GPT2config) -> None:
@@ -49,22 +49,24 @@ class CausaSelfAttention(nn.Module): # 注意力机制
         B, T, C = x.shape
         
         qkv = self.c_attn(x) # 分割出q k v
+        # qkv
+        # print(len(torch.split(qkv, 3, dim=-1)))
         
-        q, k, v = torch.split(qkv, 3, dim=-1)
-        
+        q, k, v = torch.split(qkv, qkv.size(-1) // 3, dim=-1)
+        # print(q.shape)
         q = q.view(B, T, self.n_head, self.n_emb // self.n_head).transpose(1, 2)
         k = k.view(B, T, self.n_head, self.n_emb // self.n_head).transpose(1, 2)
         v = v.view(B, T, self.n_head, self.n_emb // self.n_head).transpose(1, 2)
         
         attn = (q @ k.transpose(-1, -2)) * (1.0 * math.sqrt(k.size(-1)))
         
-        attn = attn.masked_fill(self.tmp[:, :] == 0, float('-inf'))
+        # print(self.tmp.shape, attn.shape, self.tmp[:T, :T].shape)
+        attn = attn.masked_fill(self.tmp[:T, :T] == 0, float('-inf'))
         
         attn = F.softmax(attn, dim=-1)
         
         y = attn @ v
-        
-        y = y.view(1, 2).contiguous().view(B, T, C)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
         
         y = self.c_proj(y)
         
@@ -104,8 +106,21 @@ class GPT2(nn.Module):
         # 映射回词表
         self.lm_head = nn.Linear(config.n_emb, config.vocab_size)
         
-    def forward(self, x):
-        
-        return x
+    def forward(self, idx: torch.Tensor):
+        B, T = idx.shape
+        pos = torch.arange(0, T)
+        pos_emb = self.transformer.wpe(pos)
+        tok_emb = self.transformer.wte(idx)
+        x = pos_emb + tok_emb
+        print(x.shape)
+        for block in self.transformer.h:
+            x = block(x)
+        x = self.transformer.ln_f(x)
+        logits = self.lm_head(x)
+        return logits
+    
+model = GPT2(config=GPT2config())
 
-print(GPT2config())
+inputx = torch.tensor([[1, 3, 4], [0, 3, 4]])
+
+print(model(inputx))
