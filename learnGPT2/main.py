@@ -61,7 +61,7 @@ class CausaSelfAttention(nn.Module): # 注意力机制
         attn = (q @ k.transpose(-1, -2)) * (1.0 * math.sqrt(k.size(-1)))
         
         # print(self.tmp.shape, attn.shape, self.tmp[:T, :T].shape)
-        attn = attn.masked_fill(self.tmp[:T, :T] == 0, float('-inf'))
+        attn = attn.masked_fill(self.tmp[:T, :T] == 0, float('-inf')) #type: ignore
         
         attn = F.softmax(attn, dim=-1)
         
@@ -108,14 +108,14 @@ class GPT2(nn.Module):
         
     def forward(self, idx: torch.Tensor):
         B, T = idx.shape
-        pos = torch.arange(0, T)
-        pos_emb = self.transformer.wpe(pos)
-        tok_emb = self.transformer.wte(idx)
+        pos = torch.arange(0, T, device=idx.device, dtype=torch.long)
+        pos_emb = self.transformer.wpe(pos) #type: ignore
+        tok_emb = self.transformer.wte(idx) #type: ignore
         x = pos_emb + tok_emb
-        print(x.shape)
-        for block in self.transformer.h:
+        # print(x.shape)
+        for block in self.transformer.h:  # type: ignore
             x = block(x)
-        x = self.transformer.ln_f(x)
+        x = self.transformer.ln_f(x) #type: ignore
         logits = self.lm_head(x)
         return logits
     
@@ -123,4 +123,4 @@ model = GPT2(config=GPT2config())
 
 inputx = torch.tensor([[1, 3, 4], [0, 3, 4]])
 
-print(model(inputx))
+print(model(inputx).shape)
